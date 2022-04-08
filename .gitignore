@@ -1,0 +1,10 @@
+__pycache__/
+.vscode/
+
+.env
+*.log
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.pem
