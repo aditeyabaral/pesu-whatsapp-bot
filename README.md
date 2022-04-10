@@ -6,6 +6,8 @@ You can add the bot using [this](https://wa.me/+14155238886?text=join%20sets-eve
 
 You can also send `unsubscribe` to unsubscribe yourself from notifications.
 
+Every 72 hours, your subscription will expire. You can renew your subscription by sending `subscribe` again, followed by `join sets-ever`. If you notice that you are not receiving messages, renewing your subscription will resolve the issue.
+
 ## What can the bot do?
 
 1. It periodically fetches PESU announcements and notifies you immediately. With a refresh interval of **1 minute**, it proves to be faster than the PESU Academy website!

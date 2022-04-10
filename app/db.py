@@ -33,6 +33,12 @@ def add_subscriber(number):
     result = connection.execute(query)
 
 
+def update_subscriber(number):
+    current_time = datetime.datetime.now(IST)
+    query = subscribe_table.update().where(subscribe_table.c.number == number).values(subscribe_time=current_time)
+    result = connection.execute(query)
+
+
 def remove_subscriber(number):
     query = subscribe_table.delete().where(subscribe_table.c.number == number)
     result = connection.execute(query)
@@ -45,10 +51,9 @@ def get_all_subscribers():
     return result
 
 
-def get_expiring_subscribers():
+def get_expiring_subscribers(hours=48):
     current_time = datetime.datetime.now(IST)
-    query = subscribe_table.select().where(subscribe_table.c.subscribe_time <
-                                           current_time - datetime.timedelta(hours=48))
+    query = subscribe_table.select().where(current_time - subscribe_table.c.subscribe_time >= datetime.timedelta(hours=hours))
     result = connection.execute(query).fetchall()
     if result:
         result = [row[0] for row in result]

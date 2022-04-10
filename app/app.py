@@ -42,7 +42,6 @@ def send_message(to, body, media=None):
         body_chunks = [body[i:i+1566] for i in range(0, len(body), 1566)]
         num_chunks = len(body_chunks)
 
-        # Send first chunk with media if any
         if media is None:
             message = twilio_client.messages.create(
                 to=f'whatsapp:{to}',
@@ -58,7 +57,6 @@ def send_message(to, body, media=None):
             )
         time.sleep(1)
 
-        # Send remaining chunks without media
         for i in range(1, num_chunks):
             message = twilio_client.messages.create(
                 to=f'whatsapp:{to}',
@@ -103,16 +101,18 @@ def receive():
         if not check_subscriber_exists(from_number):
             add_subscriber(from_number)
             send_message(
-                from_number, "You have successfully subscribed to the channel!")
+                from_number, f"*You have successfully subscribed to the channel!* Since we are on a free deployment, you will be required to *renew your membership every 3 days* by first sending ```subscribe``` followed by ```{TWILIO_JOIN_CODE}```.")
         else:
-            send_message(
-                from_number, "You are already a member of the channel!")
+            content = f"To confirm subscription renewal, send ```{TWILIO_JOIN_CODE}```."
+            send_message(from_number, content)
+            update_subscriber(from_number)
+
     elif content == 'unsubscribe':
         if check_subscriber_exists(from_number):
             remove_subscriber(from_number)
             send_message(from_number, "You have successfully unsubscribed from the channel!")
         else:
-            send_message(from_number, "You are not a member of the channel!")
+            send_message(from_number, "You are not a member of the channel! You can subscribe to the channel by sending ```subscribe```.")
     return 'OK', 200
 
 
@@ -129,6 +129,18 @@ def send():
         return 'Invalid request', 400
     send_message(to, body, media)
     return 'OK', 200
+
+
+def send_subscription_reminder():
+    logging.info('Sending subscription reminder')
+    for number in get_expiring_subscribers():
+        send_message(number, f"*Your subscription to this channel will expire in less than 24 hours!* Please renew your subscription by sending ```subscribe``` followed by ```{TWILIO_JOIN_CODE}```.")
+
+
+def send_expired_subscribers_reminder():
+    logging.info('Sending subscription reminder to expired subscribers')
+    for number in get_expiring_subscribers(71):
+        send_message(number, f"*Your subscription to this channel will expire in less than 1 hour!* Please renew your subscription by sending ```subscribe``` followed by ```{TWILIO_JOIN_CODE}```.")
 
 
 def get_latest_reddit_posts():
@@ -232,8 +244,10 @@ if __name__ == "__main__":
     TODAY_ANNOUNCEMENTS_MADE = list()
 
     scheduler = BackgroundScheduler()
-    scheduler.add_job(get_latest_reddit_posts, 'interval', minutes=60)
-    scheduler.add_job(get_latest_instagram_posts, 'interval', minutes=10)
+    scheduler.add_job(send_subscription_reminder, 'interval', hours=6)
+    scheduler.add_job(send_expired_subscribers_reminder, 'interval', hours=1)
+    # scheduler.add_job(get_latest_reddit_posts, 'interval', hours=1)
+    # scheduler.add_job(get_latest_instagram_posts, 'interval', minutes=10)
     scheduler.add_job(get_latest_pesu_announcements, 'interval', seconds=60)
     scheduler.start()
     app.run(host='0.0.0.0', port=PORT, debug=True, use_reloader=False)
